@@ -1,7 +1,6 @@
 import pandas as pd
 import os
-from data_process import cities_process
-from geopy.geocoders import Nominatim
+from data_process import cities_process, supplier_process
 import time
 
 
@@ -101,19 +100,31 @@ combined_df['Орехи КЛ'] = combined_df['Орехи КЛ'].astype(str)
 
 combined_df['Город'] = combined_df['Город'].apply(cities_process)
 
-geolocator = Nominatim(user_agent="city_to_region")
+print('Обрабатываем регионы')
+region = pd.read_excel('region.xlsx')
+region = region.drop_duplicates(subset='Город')
 
-def get_region(city):
-    pass
+combined_df['Город'] = combined_df['Город'].str.strip().str.capitalize()
+region['Город'] = region['Город'].str.strip().str.capitalize()
 
-unique_cities = combined_df['Город'].dropna().unique()
-city_to_region = {}
+# Переименовываем колонку в справочнике
+region = region.rename(columns={'Регион': 'region'})
 
-for city in unique_cities:
-    region = get_region(city)
-    city_to_region[city] = region
-    time.sleep(1)  # важно!
+# Если "Город" на самом деле — это регион
+combined_df['Регион'] = combined_df['Город'].where(combined_df['Город'].isin(region['region']))
 
-combined_df['Регион'] = combined_df['Город'].map(city_to_region)
+# Делаем merge по "Город"
+combined_df = combined_df.merge(region, on='Город', how='left')
 
+# Объединяем вручную найденные регионы и те, что из справочника
+combined_df['Регион'] = combined_df['Регион'].combine_first(combined_df['region'])
+
+# Удаляем лишний столбец
+combined_df = combined_df.drop(columns=['region'])
+
+print('Обрабатываем поставщиков')
+combined_df['Фирма поставщик'] = combined_df['Фирма поставщик'].apply(supplier_process)
+
+# Сохраняем результат
+print('Ластетская')
 combined_df.to_excel('combined_data.xlsx', index=False)
