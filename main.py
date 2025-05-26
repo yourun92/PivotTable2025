@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from data_process import cities_process, supplier_process
+from data_process import cities_process, supplier_process, customer_process
 import time
 
 
@@ -125,6 +125,8 @@ combined_df = combined_df.drop(columns=['region'])
 print('Обрабатываем поставщиков')
 combined_df['Фирма поставщик'] = combined_df['Фирма поставщик'].apply(supplier_process)
 
+print('Обрабатываем заказчиков')
+combined_df['Название Компании - клиента'] = combined_df['Название Компании - клиента'].apply(customer_process)
 # Сохраняем результат
 print('Ластетская')
 combined_df.to_excel('combined_data.xlsx', index=False)
